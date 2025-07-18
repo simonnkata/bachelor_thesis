@@ -1,34 +1,38 @@
-from scipy.signal import cheby2, butter, cheby1, ellip, bessel, firwin, filtfilt
+from scipy.signal import cheby2, filtfilt
 import pandas as pd
-import numpy as np
 
-def cheby2_filter(fs, cutoff, order, rs, df):
+
+def low_pass_filter(df, fs, cutoff, order, rs, rp):
     norm = cutoff / (0.5 * fs)
     b, a = cheby2(order, rs, norm, btype='low')
     return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
 
-def butter_filter(fs, cutoff, order, rs, df):
+
+def high_pass_filter(df, fs, cutoff, order, rs, rp):
     norm = cutoff / (0.5 * fs)
-    b, a = butter(order, norm, btype='low')
+    b, a = cheby2(order, rs, norm, btype='high')
     return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
 
-def cheby1_filter(fs, cutoff, order, rs, df):
-    norm = cutoff / (0.5 * fs)
-    b, a = cheby1(order, 0.5, norm, btype='low')  # using rs as rp
+
+def band_pass_filter(df, fs, low_cutoff, hight_cutoff, order, rs, rp):
+    Wn = [low_cutoff / (0.5 * fs), hight_cutoff / (0.5 * fs)]
+    b, a = cheby2(order, rs, Wn, btype='bandpass')
     return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
 
-def ellip_filter(fs, cutoff, order, rs, df):
-    norm = cutoff / (0.5 * fs)
-    b, a = ellip(order, 0.5, rs, norm, btype='low')  # using rs for both rp and rs
+
+def band_stop_filter(df, fs, low_cutoff, hight_cutoff, order, rs, rp):
+    Wn = [low_cutoff / (0.5 * fs), hight_cutoff / (0.5 * fs)]
+    b, a = cheby2(order, rs, Wn, btype='bandstop')
     return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
 
-def bessel_filter(fs, cutoff, order, rs, df):
-    norm = cutoff / (0.5 * fs)
-    b, a = bessel(order, norm, btype='low', norm='phase')
-    return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
 
-def fir_filter(fs, cutoff, order, rs, df):
-    norm = cutoff / (0.5 * fs)
-    b = firwin(numtaps=order + 1, cutoff=norm)
-    a = 1
-    return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
+def general_filter(df, fs, cutoff, order, rs, rp, high, low, filter_type):
+    match filter_type:
+        case 'low-pass':
+            return low_pass_filter(df, fs, cutoff, order, rs, rp)
+        case 'high-pass':
+            return high_pass_filter(df, fs, cutoff, order, rs, rp)
+        case 'band-pass':
+            return band_pass_filter(df, fs, low, high, order, rs, rp)
+        case 'band-stop':
+            return band_stop_filter(df, fs, low, high, order, rs, rp)
