@@ -8,6 +8,7 @@ import copy
 import pickle
 
 mapping = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g'}
+classes = {0: 'baseline', 1: 'full', 2: 'moderate', 3: 'light'}
 
 
 # Load In the Data
@@ -25,11 +26,12 @@ def load_data() -> list:
             if filename.endswith('.csv'):
                 file_path = os.path.join('data/' + subject, filename)
                 # print(f'Processing {file_path}...')
-                df = pd.read_csv(file_path)
-                _data[index].append(df)
+                _df = pd.read_csv(file_path)
+                _data[index].append(_df)
     return _data
 
 
+# Helper: plots and saves independent recording
 def plot_and_save(np_array, subject, variant, directory) -> None:
     plt.clf()
     # plt.plot(df['R'], color='red', label='R')
@@ -45,6 +47,7 @@ def plot_and_save(np_array, subject, variant, directory) -> None:
     plt.savefig(save_dir)
 
 
+# Iterative: iterates through data object, plots and saves recordings in folders
 def plot_all(folder, _data):
     os.makedirs(folder, exist_ok=True)
     for subject_number, subject_data in enumerate(_data):
@@ -55,6 +58,7 @@ def plot_all(folder, _data):
             plot_and_save(recording, str(subject_number + 1), mapping[index], directory)
 
 
+# Helper
 def snr(original, filtered):
     noise = original - filtered
     signal_power = np.mean(original ** 2)
@@ -63,6 +67,7 @@ def snr(original, filtered):
     return _snr
 
 
+# Iterative
 def total_snr(original, filtered):
     snr_values = []
     for subject_o, subject_f in zip(original, filtered):
@@ -83,8 +88,9 @@ def filter_data(_data):
     return _data
 
 
-def pos(df):
-    rgb = df[['R', 'G', 'B']].values
+# Helper: Applies pos to df object (R,G,B)
+def pos(_df):
+    rgb = _df[['R', 'G', 'B']].values
     mean_rgb = np.mean(rgb, axis=0)
     normalized = (rgb - mean_rgb) / mean_rgb
     P = np.array([[0, 1, -1], [-2, 1, 1]])
@@ -94,6 +100,7 @@ def pos(df):
     return signal
 
 
+# Iterative
 def apply_pos(_data):
     all_recordings = []
     for subject in _data:
@@ -105,15 +112,63 @@ def apply_pos(_data):
     return all_recordings
 
 
-data = load_data()
-data_copy = copy.deepcopy(data)
-post_pos = apply_pos(data_copy)
-plot_all('corrected_version_pos', post_pos)
-filtered_data = filter_data(post_pos)
-plot_all('corrected_version_filter', post_pos)
+# Helper
+def get_min_max(recordings):
+    global_min, global_max = np.inf, -np.inf
+    for subject in recordings:
+        for recording in subject:
+            current_min = np.min(recording)
+            current_max = np.max(recording)
+            global_max = max(current_max, global_max)
+            global_min = min(current_min, global_min)
+    return [global_min, global_max]
 
-with open('filtered_recordings.pkl', 'wb') as f:
-    pickle.dump(filtered_data, f)
 
-with open('post_pos.pkl', 'wb') as f:
-    pickle.dump(post_pos, f)
+# Iterative: Normalises Data throughout the object, on a scale covering the entire structure
+def normalise(recordings):
+    global_min, global_max = get_min_max(recordings)
+    normalised_recordings = []
+    for subject in recordings:
+        subject_recording = []
+        for recording in subject:
+            recording = 2 * ((recording - global_min) / (global_max - global_min)) - 1
+            subject_recording.append(recording)
+        normalised_recordings.append(subject_recording)
+    return normalised_recordings
+
+
+# General: Loads data, Applies POS, Filters, Normalises
+def load_pos_filter_plot():
+    data = load_data()
+    data_copy = copy.deepcopy(data)
+    post_pos = apply_pos(data_copy)
+    #    plot_all('corrected_version_pos', post_pos)
+    filtered_data = filter_data(post_pos)
+    #    plot_all('corrected_version_filter', post_pos)
+    return filtered_data
+
+
+# Loads POSed, filtered, and normalised data, splits into time blocks.
+def split_data():
+    with open('normalised.pkl', 'rb') as file:
+        recordings = pickle.load(file)
+    _df = pd.DataFrame(columns=['signal', 'class'])
+    for subject in recordings[9:]:
+        for index, recording in enumerate(subject[3:]):
+            if index == 0:
+                for i in range(0, 1800, 300):  # because recording 'd' lasts only 1 minute
+                    new_row = pd.DataFrame({
+                        'signal': [recording[i:i + 301]],
+                        'class': index
+                    })
+                    _df = pd.concat([_df, new_row], ignore_index=True)
+            else:
+                for i in range(0, 3600, 300):
+                    new_row = pd.DataFrame({
+                        'signal': [recording[i:i + 301]],
+                        'class': index
+                    })
+                    _df = pd.concat([_df, new_row], ignore_index=True)
+    return _df
+
+
