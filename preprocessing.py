@@ -107,10 +107,10 @@ def apply_pos(_data):
 
 data = load_data()
 data_copy = copy.deepcopy(data)
-filtered_data = filter_data(data_copy)
-total_snr(data, filtered_data)
-post_pos = apply_pos(filtered_data)
-plot_all('post_pos', post_pos)
+post_pos = apply_pos(data_copy)
+plot_all('corrected_version_pos', post_pos)
+filtered_data = filter_data(post_pos)
+plot_all('corrected_version_filter', post_pos)
 
 with open('filtered_recordings.pkl', 'wb') as f:
     pickle.dump(filtered_data, f)

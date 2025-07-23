@@ -2,28 +2,28 @@ from scipy.signal import cheby2, filtfilt
 import pandas as pd
 
 
-def low_pass_filter(df, fs, cutoff, order, rs, rp):
+def low_pass_filter(signal, fs, cutoff, order, rs, rp):
     norm = cutoff / (0.5 * fs)
     b, a = cheby2(order, rs, norm, btype='low')
-    return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
+    return filtfilt(b, a, signal)
 
 
-def high_pass_filter(df, fs, cutoff, order, rs, rp):
+def high_pass_filter(signal, fs, cutoff, order, rs, rp):
     norm = cutoff / (0.5 * fs)
     b, a = cheby2(order, rs, norm, btype='high')
-    return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
+    return filtfilt(b, a, signal)
 
 
-def band_pass_filter(df, fs, low_cutoff, hight_cutoff, order, rs, rp):
+def band_pass_filter(signal, fs, low_cutoff, hight_cutoff, order, rs, rp):
     Wn = [low_cutoff / (0.5 * fs), hight_cutoff / (0.5 * fs)]
     b, a = cheby2(order, rs, Wn, btype='bandpass')
-    return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
+    return filtfilt(b, a, signal)
 
 
-def band_stop_filter(df, fs, low_cutoff, hight_cutoff, order, rs, rp):
+def band_stop_filter(signal, fs, low_cutoff, hight_cutoff, order, rs, rp):
     Wn = [low_cutoff / (0.5 * fs), hight_cutoff / (0.5 * fs)]
     b, a = cheby2(order, rs, Wn, btype='bandstop')
-    return pd.DataFrame({c: filtfilt(b, a, df[c]) for c in ['R', 'G', 'B']})
+    return filtfilt(b, a, signal)
 
 
 def general_filter(df, fs, cutoff, order, rs, rp, high, low, filter_type):
