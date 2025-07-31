@@ -150,7 +150,7 @@ def load_pos_filter_plot():
 
 # Loads POSed, filtered, and normalised data, splits into time blocks.
 def split_data():
-    with open('normalised.pkl', 'rb') as file:
+    with open('lowkey_dont_need/normalised.pkl', 'rb') as file:
         recordings = pickle.load(file)
     _df = pd.DataFrame(columns=['signal', 'class'])
     for subject in recordings[9:]:
@@ -172,3 +172,4 @@ def split_data():
     return _df
 
 
+data = load_pos_filter_plot()
