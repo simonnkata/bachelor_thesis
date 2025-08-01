@@ -35,7 +35,13 @@ del estimations_rppg[13]
 del estimations_ppg[13]
 
 errors = []
-for subject_ppg, subject_rppg in zip(estimations_rppg[9:], estimations_ppg[9:]):
+for subject_ppg, subject_rppg in zip(estimations_ppg[9:], estimations_rppg[9:]):
     for estimation_ppg, estimation_rppg in zip(subject_ppg, subject_rppg):
         if estimation_ppg is not None and estimation_rppg is not None:
             errors.append(abs(estimation_ppg - estimation_rppg))
+
+print(f"mean: {np.mean(errors)}")
+print(f"std: {np.std(errors)}")
+print(f"max: {np.max(errors)}")
+print(f"min: {np.min(errors)}")
+print(f"median: {np.median(errors)}")

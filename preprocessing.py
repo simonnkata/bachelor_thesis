@@ -170,6 +170,3 @@ def split_data():
                     })
                     _df = pd.concat([_df, new_row], ignore_index=True)
     return _df
-
-
-data = load_pos_filter_plot()
