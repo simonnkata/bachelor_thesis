@@ -6,21 +6,23 @@ import numpy as np
 import os
 import pickle
 
+def heart_rate(recording, fs):
+    ppg = detrend(recording)
+    N = len(ppg)
+    yf = np.abs(rfft(ppg))
+    xf = rfftfreq(N, 1 / fs)
 
+    mask = (xf >= 0.8) & (xf <= 3)
+    peak_freq = xf[mask][np.argmax(yf[mask])]
+    heart_rate_bpm = peak_freq * 60
+    return heart_rate_bpm
 def estimate(_data):
     fs = 30
     results = []
     for subject in _data:
         subject_data = []
         for recording in subject:
-            ppg = detrend(recording)
-            N = len(ppg)
-            yf = np.abs(rfft(ppg))
-            xf = rfftfreq(N, 1 / fs)
-
-            mask = (xf >= 0.8) & (xf <= 3)
-            peak_freq = xf[mask][np.argmax(yf[mask])]
-            heart_rate_bpm = peak_freq * 60
+            heart_rate_bpm = heart_rate(recording, fs)
             subject_data.append(heart_rate_bpm)
         results.append(subject_data)
     return results
