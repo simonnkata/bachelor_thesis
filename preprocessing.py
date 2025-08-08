@@ -145,7 +145,8 @@ def load_pos_filter_plot():
     #    plot_all('corrected_version_pos', post_pos)
     filtered_data = filter_data(post_pos)
     #    plot_all('corrected_version_filter', post_pos)
-    return filtered_data
+    normalised_data = normalise(filtered_data)
+    return normalised_data
 
 
 # Loads POSed, filtered, and normalised data, splits into time blocks.
@@ -170,3 +171,4 @@ def split_data():
                     })
                     _df = pd.concat([_df, new_row], ignore_index=True)
     return _df
+
