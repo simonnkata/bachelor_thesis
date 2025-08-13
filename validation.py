@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 
 
 def heart_rate(recording, fs):
+    if len(recording) == 0:
+        print('empty recording')
+        return 75
     recording = detrend(recording)
     N = len(recording)
     yf = np.abs(rfft(recording))

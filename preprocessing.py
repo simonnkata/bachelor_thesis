@@ -150,25 +150,33 @@ def load_pos_filter_plot():
 
 
 # Loads POSed, filtered, and normalised data, splits into time blocks.
-def split_data():
-    with open('lowkey_dont_need/normalised.pkl', 'rb') as file:
-        recordings = pickle.load(file)
+def split_data(recordings):
+    #  with open('lowkey_dont_need/normalised.pkl', 'rb') as file:
+    #    recordings = pickle.load(file)
     _df = pd.DataFrame(columns=['signal', 'class'])
+    empty_recording_counter = 0
     for subject in recordings[9:]:
         for index, recording in enumerate(subject[3:]):
             if index == 0:
                 for i in range(0, 1800, 300):  # because recording 'd' lasts only 1 minute
                     new_row = pd.DataFrame({
-                        'signal': [recording[i:i + 301]],
+                        'signal': [recording[i:i + 300]],
                         'class': index
                     })
-                    _df = pd.concat([_df, new_row], ignore_index=True)
+                    if len(recording[i:i+300]) != 0:
+                        _df = pd.concat([_df, new_row], ignore_index=True)
+                    else:
+                        empty_recording_counter += 1
             else:
                 for i in range(0, 3600, 300):
                     new_row = pd.DataFrame({
-                        'signal': [recording[i:i + 301]],
+                        'signal': [recording[i:i + 300]],
                         'class': index
                     })
-                    _df = pd.concat([_df, new_row], ignore_index=True)
+                    if len(recording[i:i+300]) != 0:
+                        _df = pd.concat([_df, new_row], ignore_index=True)
+                    else:
+                        empty_recording_counter += 1
+    print(f'Empty Recordings: {empty_recording_counter}')
     return _df
 
