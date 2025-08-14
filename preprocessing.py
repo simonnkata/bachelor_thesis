@@ -132,6 +132,7 @@ def normalise(recordings):
         subject_recording = []
         for recording in subject:
             recording = 2 * ((recording - global_min) / (global_max - global_min)) - 1
+            recording = (recording - np.mean(recording)) / np.std(recording)
             subject_recording.append(recording)
         normalised_recordings.append(subject_recording)
     return normalised_recordings

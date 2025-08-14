@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 # Fudicial points: Onset, Systolic Peak, Max Slope, Dicrotic Notch, Diastolic Peak
 fs = 30
 classes = {0: 'baseline', 1: 'full', 2: 'moderate', 3: 'light'}
+features_list = ['pulse_interval', 'systolic_width', 'systolic_peak_time', 'diastolic_width',
+                 'systolic_time', 'diastolic_time', 'time_delay', 'diastolic_peak_time']
 
 
 def find_pulse_rate_variability(entry):
@@ -69,18 +71,18 @@ def find_fiducial_points(cycle):
     systolic_peak = None
     dicrotic_notch = None
     dicrotic_peak = None
-    for i in range(1,len(cycle)):
+    for i in range(1, len(cycle)):
         if cycle[i] < cycle[i - 1]:
-            systolic_peak = i-1
+            systolic_peak = i - 1
             break
     for i in range(systolic_peak + 1, len(cycle)):
         if cycle[i] > cycle[i - 1]:
-            dicrotic_notch = i-1
+            dicrotic_notch = i - 1
             break
     if dicrotic_notch:
         for i in range(dicrotic_notch + 1, len(cycle)):
             if cycle[i] < cycle[i - 1]:
-                dicrotic_peak = i-1
+                dicrotic_peak = i - 1
                 break
     return [systolic_peak, dicrotic_notch, dicrotic_peak]
 
@@ -104,8 +106,8 @@ def fiducial_point_features(cycle):
         # systolic_peak_time
         systolic_peak_time = sp_i / fs
 
-        cycle_feature['systolic_width'] = systolic_width
-        cycle_feature['systolic_peak_time'] = systolic_peak_time
+        cycle_feature['systolic_width'] = abs(systolic_width)
+        cycle_feature['systolic_peak_time'] = abs(systolic_peak_time)
     if dn:
         # diastolic width
         value_at_50 = on + 0.5 * (dn - sp)
@@ -119,19 +121,42 @@ def fiducial_point_features(cycle):
         # diastolic time
         diastolic_time = (len(cycle) - dn_i) / fs
 
-        cycle_feature['diastolic_width'] = diastolic_width
-        cycle_feature['systolic_time'] = systolic_time
-        cycle_feature['diastolic_time'] = diastolic_time
+        cycle_feature['diastolic_width'] = abs(diastolic_width)
+        cycle_feature['systolic_time'] = abs(systolic_time)
+        cycle_feature['diastolic_time'] = abs(diastolic_time)
     if dp:
         # time delay
-        time_delay = (dp_i-sp_i) / fs
+        time_delay = (dp_i - sp_i) / fs
 
         # diastolic peak time
         diastolic_peak_time = dp_i / fs
 
-        cycle_feature['time_delay'] = time_delay
-        cycle_feature['diastolic_peak_time'] = diastolic_peak_time
+        cycle_feature['time_delay'] = abs(time_delay)
+        cycle_feature['diastolic_peak_time'] = abs(diastolic_peak_time)
     return cycle_feature
+
+
+def aggregate_fiducial_features(recording):
+    cycles = split_cycles(recording)
+    cycle_features = []
+    for cycle in cycles:
+        cycle_feature = fiducial_point_features(cycle)
+        cycle_features.append(cycle_feature)
+    features = ['pulse_interval', 'systolic_width', 'systolic_peak_time', 'diastolic_width',
+                'systolic_time', 'diastolic_time', 'time_delay', 'diastolic_peak_time']
+    features_from_cycles = dict.fromkeys(features)
+    feature_rep = dict.fromkeys(features)
+    trim_fraction = 0.1
+    for feature in features:
+        features_from_cycles[feature] = [x.get(feature) for x in cycle_features if x.get(feature) is not None]
+        if features_from_cycles[feature]:
+            length = len(features_from_cycles[feature])
+            trim_size = int(length * trim_fraction)
+            trimmed = sorted(features_from_cycles[feature])[trim_size: length - trim_size]
+            feature_rep[feature] = np.mean(trimmed)
+        else:
+            feature_rep[feature] = None
+    return feature_rep
 
 
 def extract():
@@ -146,6 +171,7 @@ def extract():
     rise_time = df.apply(find_rise_time, axis=1)
     decay_time = df.apply(find_decay_time, axis=1)
     pulse_rate = df.apply(find_pulse_rate_variability, axis=1)
+
     features_df = pd.DataFrame({
         'peak_amplitude': peak_amplitude,
         'rise_time': rise_time,
@@ -153,6 +179,17 @@ def extract():
         'pulse_rate': pulse_rate,
         'classification': df.classification
     })
+    for idx, row in df.iterrows():
+        fiducial_features = aggregate_fiducial_features(row['signal'])
+        features_df.at[idx, 'pulse_interval'] = fiducial_features['pulse_interval']
+        features_df.at[idx, 'systolic_width'] = fiducial_features['systolic_width']
+        features_df.at[idx, 'systolic_peak_time'] = fiducial_features['systolic_peak_time']
+        features_df.at[idx, 'diastolic_width'] = fiducial_features['diastolic_width']
+        features_df.at[idx, 'systolic_time'] = fiducial_features['systolic_time']
+        features_df.at[idx, 'diastolic_time'] = fiducial_features['diastolic_time']
+        features_df.at[idx, 'time_delay'] = fiducial_features['time_delay']
+        features_df.at[idx, 'diastolic_peak_time'] = fiducial_features['diastolic_peak_time']
+
     print(f'We are working with {len(features_df)} rows')
     return features_df
 
@@ -183,4 +220,20 @@ for recording in df['signal']:
             plt.scatter([points[2]], [cycle[points[2]]], color='blue', label='dp')
             plt.legend()
         plt.show()
+'''
+'''
+data = load_pos_filter_plot()
+df = split_data(data)
+df = df.rename(columns={"class": "classification"})
+complete = 0
+incomplete = 0
+for recording in df['signal']:
+    features = aggregate_fiducial_features(recording)
+    has_features = all(feature in features and features[feature] is not None for feature in features_list)
+    if has_features:
+        complete += 1
+    else:
+        incomplete += 1
+print(f'Complete Features: {complete}')
+print(f'Incomplete Features: {incomplete}')
 '''
