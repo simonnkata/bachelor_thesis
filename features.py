@@ -45,9 +45,9 @@ def find_decay_time(entry):
 
 def split_cycles(recording):
     expected_distance = int(fs * 60 / heart_rate(recording, fs))
-    peaks, _ = find_peaks(recording, distance=expected_distance)
+    print(f'Expected_distance: {expected_distance}')
     inverted = -recording
-    min_indices, _ = find_peaks(inverted, distance=expected_distance)
+    min_indices, _ = find_peaks(inverted, distance=expected_distance - 3)
 
     # Each min_index is an onset
     onsets = min_indices
@@ -66,56 +66,72 @@ def split_cycles(recording):
 
 
 def find_fiducial_points(cycle):
-    systolic_peak = np.argmax(cycle)
+    systolic_peak = None
     dicrotic_notch = None
     dicrotic_peak = None
+    for i in range(1,len(cycle)):
+        if cycle[i] < cycle[i - 1]:
+            systolic_peak = i-1
+            break
     for i in range(systolic_peak + 1, len(cycle)):
         if cycle[i] > cycle[i - 1]:
-            dicrotic_notch = i
+            dicrotic_notch = i-1
             break
     if dicrotic_notch:
         for i in range(dicrotic_notch + 1, len(cycle)):
             if cycle[i] < cycle[i - 1]:
-                dicrotic_peak = i
+                dicrotic_peak = i-1
                 break
     return [systolic_peak, dicrotic_notch, dicrotic_peak]
 
 
-def fiducial_point_features(recording):
-    cycles = split_cycles(recording)
-    cycle_features = []
-    for cycle in cycles:
-        cycle_feature = {}
-        on = cycle[0]
-        sp_i, dn_i, dp_i = find_fiducial_points(cycle)
-        sp, dn, dp = cycle[sp_i], cycle[dn_i], cycle[dp_i]
-        pulse_interval = len(cycle) / fs
-        cycle_feature['pulse_interval'] = pulse_interval
-        if sp:
-            # systolic with
-            value_at_50 = on + 0.5 * (sp - on)
-            segment = cycle[:sp_i+1]
-            index_at_50 = min(range(len(segment)), key=lambda i: abs(segment[i] - value_at_50))
-            systolic_width = (sp_i-index_at_50)/fs
+def fiducial_point_features(cycle):
+    cycle_feature = {}
+    on = cycle[0]
+    sp_i, dn_i, dp_i = find_fiducial_points(cycle)
+    sp = cycle[sp_i] if sp_i is not None else None
+    dn = cycle[dn_i] if dn_i is not None else None
+    dp = cycle[dp_i] if dp_i is not None else None
+    pulse_interval = len(cycle) / fs
+    cycle_feature['pulse_interval'] = pulse_interval
+    if sp:
+        # systolic width
+        value_at_50 = on + 0.5 * (sp - on)
+        segment = cycle[:sp_i + 1]
+        index_at_50 = min(range(len(segment)), key=lambda i: abs(segment[i] - value_at_50))
+        systolic_width = (sp_i - index_at_50) / fs
 
-            # systolic_peak_time
-            systolic_peak_time = sp_i/fs
+        # systolic_peak_time
+        systolic_peak_time = sp_i / fs
 
-            cycle_feature['systolic_width'] = systolic_width
-            cycle_feature['systolic_peak_time'] = systolic_peak_time
-        if dn:
-            diastolic_width = 0
-            systolic_time = 0
-            diastolic_time = 0
-            cycle_feature['diastolic_width'] = diastolic_width
-            cycle_feature['systolic_time'] = systolic_time
-            cycle_feature['diastolic_time'] = diastolic_time
-        if dp:
-            time_delay = 0
-            diastolic_peak_time = 0
-            cycle_feature['time_delay'] = time_delay
-            cycle_feature['diastolic_peak_time'] = diastolic_peak_time
-    # Do analysis with cycle_features
+        cycle_feature['systolic_width'] = systolic_width
+        cycle_feature['systolic_peak_time'] = systolic_peak_time
+    if dn:
+        # diastolic width
+        value_at_50 = on + 0.5 * (dn - sp)
+        segment = cycle[sp_i:dn_i + 1]
+        index_at_50 = min(range(len(segment)), key=lambda i: abs(segment[i] - value_at_50))
+        diastolic_width = (dn_i - index_at_50) / fs
+
+        # systolic time
+        systolic_time = dn_i / fs
+
+        # diastolic time
+        diastolic_time = (len(cycle) - dn_i) / fs
+
+        cycle_feature['diastolic_width'] = diastolic_width
+        cycle_feature['systolic_time'] = systolic_time
+        cycle_feature['diastolic_time'] = diastolic_time
+    if dp:
+        # time delay
+        time_delay = (dp_i-sp_i) / fs
+
+        # diastolic peak time
+        diastolic_peak_time = dp_i / fs
+
+        cycle_feature['time_delay'] = time_delay
+        cycle_feature['diastolic_peak_time'] = diastolic_peak_time
+    return cycle_feature
 
 
 def extract():
@@ -145,3 +161,26 @@ start = time.time()
 extract()
 end = time.time()
 print(f"Features Extracted in {end - start} seconds")
+'''
+data = load_pos_filter_plot()
+df = split_data(data)
+df = df.rename(columns={"class": "classification"})
+for recording in df['signal']:
+    # recording = df['signal'].iloc[0]
+    cycles = split_cycles(recording)
+    for cycle in cycles:
+        points = find_fiducial_points(cycle)
+        print(points)
+        plt.clf()
+        plt.plot(cycle)
+        if points[0]:
+            plt.scatter([points[0]], [cycle[points[0]]], color='red', label='sp')
+            plt.legend()
+        if points[1]:
+            plt.scatter([points[1]], [cycle[points[1]]], color='green', label='dn')
+            plt.legend()
+        if points[2]:
+            plt.scatter([points[2]], [cycle[points[2]]], color='blue', label='dp')
+            plt.legend()
+        plt.show()
+'''
