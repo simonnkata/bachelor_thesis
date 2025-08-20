@@ -159,10 +159,10 @@ def aggregate_fiducial_features(recording):
     return feature_rep
 
 
-def extract():
-    data = load_pos_filter_plot()
-    df = split_data(data)
-    df = df.rename(columns={"class": "classification"})
+def extract(df):
+    # data = load_pos_filter_plot()
+    # df = split_data(data)
+    # df = df.rename(columns={"class": "classification"})
     # with open('windowed_df.pkl', 'rb') as f:
     #    df = pickle.load(f)
     #    df = df.rename(columns={"class": "classification"})
@@ -193,12 +193,12 @@ def extract():
     print(f'We are working with {len(features_df)} rows')
     return features_df
 
-
+'''
 start = time.time()
 extract()
 end = time.time()
 print(f"Features Extracted in {end - start} seconds")
-'''
+
 data = load_pos_filter_plot()
 df = split_data(data)
 df = df.rename(columns={"class": "classification"})

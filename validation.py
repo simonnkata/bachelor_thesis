@@ -8,6 +8,14 @@ import pickle
 from preprocessing import load_pos_filter_plot
 import re
 import matplotlib.pyplot as plt
+import pandas as pd
+
+classes = {
+    3: 'baseline',
+    4: 'full',
+    5: 'moderate',
+    6: 'light'
+}
 
 
 def heart_rate(recording, fs):
@@ -59,6 +67,7 @@ def compare_estimations():
     print(f"median: {np.median(errors)}")
 
 
+# noinspection PyUnreachableCode
 def validate():
     number_mapping = {
         3: 'd',
@@ -71,10 +80,11 @@ def validate():
     #    rppg = pickle.load(file)
     rppg = load_pos_filter_plot()
     rppg_structure = {}
+    signal_structure = {}
+    classification_structure = {}
     fs = 30
     for subject_number in range(8, len(rppg)):
         subject = rppg[subject_number]
-        print(f'Processing subject {subject_number}...')
         for recording_number in range(3, len(subject)):
             recording = subject[recording_number]
             length = 60 if recording_number == 3 else 120
@@ -87,14 +97,17 @@ def validate():
                 estimated_heart_rate = heart_rate(recording[i:i + step], fs)
                 rppg_structure[
                     f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = estimated_heart_rate
+                signal_structure[
+                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = window
+                classification_structure[
+                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = classes[recording_number]
 
     # Calculate estimations for ppg
     fs = 128
     ppg_structure = {}
+
     files = sorted([f for f in os.listdir('_processed') if f.isdigit()], key=int)
-    print(files)
     for subject_number, subject in enumerate(files):
-        print(f'Processing subject {subject}...')
         for recording_number, filename in enumerate(os.listdir('_processed/' + subject)):
             if filename.endswith('.txt'):
                 file_path = os.path.join('_processed/' + subject, filename)
@@ -105,8 +118,8 @@ def validate():
                 if recording_type in ['d', 'e', 'f', 'g']:
                     length = 60 if recording_number == 1 else 120
                     for i in range(0, length * fs, fs * 10):
-                        window = recording[i:i + (fs*10)]
-                        if len(window) < (fs*10):
+                        window = recording[i:i + (fs * 10)]
+                        if len(window) < (fs * 10):
                             break
                         estimated_heart_rate = heart_rate(window, fs)
                         ppg_structure[
@@ -115,11 +128,18 @@ def validate():
     #    pickle.dump(rppg_structure, file)
     #with open('ppg_structure.pkl', 'wb') as file:
     #    pickle.dump(ppg_structure, file)
-
+    result = pd.DataFrame(columns=["signal", "classification"])
     common_keys = sorted(rppg_structure.keys() & ppg_structure.keys())
     errors = []
-    ppg_estimates = np.array([ppg_structure[k] for k in common_keys])
-    rppg_estimates = np.array([rppg_structure[k] for k in common_keys])
+    for key in common_keys:
+        error = abs(rppg_structure[key] - ppg_structure[key])
+        if error < 5:
+            result.loc[len(result)] = [signal_structure[key], classification_structure[key]]
+    print(f'Good recordings: {len(result)}')
+    print(f'Bad recordings: {len(common_keys) - len(result)}')
+    return result
+
+    '''
     mean = (ppg_estimates + rppg_estimates) / 2
     diff = ppg_estimates - rppg_estimates
     md = np.mean(diff)
@@ -147,3 +167,5 @@ def validate():
     plt.xlabel("Value")
     plt.ylabel("Count")
     plt.show()
+    '''
+validate()
