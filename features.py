@@ -8,10 +8,10 @@ import pickle
 import pandas as pd
 import numpy as np
 from scipy.signal import find_peaks
-from validation import heart_rate
-from preprocessing import load_pos_filter_plot, split_data
+from validation import heart_rate, validate
 import time
 import matplotlib.pyplot as plt
+import uuid
 
 # Fudicial points: Onset, Systolic Peak, Max Slope, Dicrotic Notch, Diastolic Peak
 fs = 30
@@ -53,18 +53,44 @@ def split_cycles(recording):
 
     # Each min_index is an onset
     onsets = min_indices
+    alternatives = find_cycles(inverted, distance=expected_distance)
     '''
+    plt.clf()
     plt.plot(recording)
-    plt.plot(peaks, recording[peaks], 'rx')
-    plt.plot(onsets, recording[onsets], 'go')
+    for onset in onsets:
+        plt.axvline(x=onset, color='red', linestyle='--', linewidth=1.5)
+    for alternative in alternatives:
+        plt.axvline(x=alternative, color='blue', linestyle='--', linewidth=1.5)
     plt.title("rPPG Signal with Detected Cycles")
-    plt.show()
+    plt.savefig(f"huh/{uuid.uuid4().hex}.png")
     '''
     result = []
     for i in range(1, len(onsets)):
         cycle = recording[onsets[i - 1]:onsets[i]]
         result.append(cycle)
     return result
+
+
+def find_cycles(inverted, distance):
+    onsets = []
+    for i in range(distance, len(inverted), distance):
+        # check to the left for the next biggest value
+        # check to the right for the next biggest value
+        # take the shorter one, or take the value at i if shorter one is beyond our tolerance
+        tolerance = 5
+        left, right = 0, 0
+        while i - left >= 0 and inverted[i - left] <= inverted[i] and left < distance:
+            left += 1
+        while i + right < len(inverted) and inverted[i + right] <= inverted[i] and right < distance:
+            right += 1
+        if min(left, right) > tolerance:
+            point = i
+        elif right < left:
+            point = i + right
+        else:
+            point = i - left
+        onsets.append(point)
+    return onsets
 
 
 def find_fiducial_points(cycle):
@@ -193,10 +219,13 @@ def extract(df):
     print(f'We are working with {len(features_df)} rows')
     return features_df
 
+
 '''
+df = validate()
 start = time.time()
-extract()
+extract(df)
 end = time.time()
+
 print(f"Features Extracted in {end - start} seconds")
 
 data = load_pos_filter_plot()

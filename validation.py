@@ -126,13 +126,14 @@ def validate():
                             f'{subject_number}_{recording_type}_{i / (fs * 10)}'] = estimated_heart_rate
     # with open('rppg_structure.pkl', 'wb') as file:
     #    pickle.dump(rppg_structure, file)
-    #with open('ppg_structure.pkl', 'wb') as file:
+    # with open('ppg_structure.pkl', 'wb') as file:
     #    pickle.dump(ppg_structure, file)
     result = pd.DataFrame(columns=["signal", "classification"])
     common_keys = sorted(rppg_structure.keys() & ppg_structure.keys())
     errors = []
     for key in common_keys:
         error = abs(rppg_structure[key] - ppg_structure[key])
+        # result.loc[len(result)] = [signal_structure[key], classification_structure[key]]
         if error < 5:
             result.loc[len(result)] = [signal_structure[key], classification_structure[key]]
     print(f'Good recordings: {len(result)}')
