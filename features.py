@@ -203,7 +203,8 @@ def extract(df):
         'rise_time': rise_time,
         'decay_time': decay_time,
         'pulse_rate': pulse_rate,
-        'classification': df.classification
+        'classification': df.classification,
+        'patient_id': df.patient_id
     })
     for idx, row in df.iterrows():
         fiducial_features = aggregate_fiducial_features(row['signal'])

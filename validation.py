@@ -81,6 +81,7 @@ def validate():
     rppg_structure = {}
     signal_structure = {}
     classification_structure = {}
+    patient_id_structure = {}
     fs = 30
     for subject_number in range(8, len(rppg)):
         subject = rppg[subject_number]
@@ -100,6 +101,8 @@ def validate():
                     f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = window
                 classification_structure[
                     f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = classes[recording_number]
+                patient_id_structure[
+                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = subject_number
 
     # Calculate estimations for ppg
     fs = 128
@@ -126,15 +129,13 @@ def validate():
     #    pickle.dump(rppg_structure, file)
     # with open('ppg_structure.pkl', 'wb') as file:
     #    pickle.dump(ppg_structure, file)
-    result = pd.DataFrame(columns=["signal", "classification"])
+    result = pd.DataFrame(columns=["signal", "classification", "patient_id"])
     common_keys = sorted(rppg_structure.keys() & ppg_structure.keys())
     errors = []
     for key in common_keys:
         error = abs(rppg_structure[key] - ppg_structure[key])
-        if classification_structure[key] == 'full':
-            result.loc[len(result)] = [signal_structure[key], classification_structure[key]]
-        elif error < 5:
-            result.loc[len(result)] = [signal_structure[key], classification_structure[key]]
+        if classification_structure[key] == 'full' or error < 5:
+            result.loc[len(result)] = [signal_structure[key], classification_structure[key], patient_id_structure[key]]
     print(result['classification'].value_counts())
     print(f'Good recordings: {len(result)}')
     print(f'Bad recordings: {len(common_keys) - len(result)}')
