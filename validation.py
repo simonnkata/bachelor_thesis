@@ -20,7 +20,6 @@ classes = {
 
 def heart_rate(recording, fs):
     if len(recording) == 0:
-        print('empty recording')
         return 75
     recording = detrend(recording)
     N = len(recording)
@@ -105,7 +104,6 @@ def validate():
     # Calculate estimations for ppg
     fs = 128
     ppg_structure = {}
-
     files = sorted([f for f in os.listdir('_processed') if f.isdigit()], key=int)
     for subject_number, subject in enumerate(files):
         for recording_number, filename in enumerate(os.listdir('_processed/' + subject)):
@@ -123,7 +121,7 @@ def validate():
                             break
                         estimated_heart_rate = heart_rate(window, fs)
                         ppg_structure[
-                            f'{subject_number}_{recording_type}_{i / (fs * 10)}'] = estimated_heart_rate
+                            f'{subject_number + 8}_{recording_type}_{i / (fs * 10)}'] = estimated_heart_rate
     # with open('rppg_structure.pkl', 'wb') as file:
     #    pickle.dump(rppg_structure, file)
     # with open('ppg_structure.pkl', 'wb') as file:
@@ -133,9 +131,11 @@ def validate():
     errors = []
     for key in common_keys:
         error = abs(rppg_structure[key] - ppg_structure[key])
-        # result.loc[len(result)] = [signal_structure[key], classification_structure[key]]
-        if error < 5:
+        if classification_structure[key] == 'full':
             result.loc[len(result)] = [signal_structure[key], classification_structure[key]]
+        elif error < 5:
+            result.loc[len(result)] = [signal_structure[key], classification_structure[key]]
+    print(result['classification'].value_counts())
     print(f'Good recordings: {len(result)}')
     print(f'Bad recordings: {len(common_keys) - len(result)}')
     return result

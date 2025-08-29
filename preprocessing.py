@@ -22,7 +22,7 @@ def load_data() -> list:
         index = len(_data)
         _data.append([])
         print(f'Processing subject {subject}...')
-        for filename in os.listdir('data/' + subject):
+        for filename in sorted(os.listdir('data/' + subject)):
             if filename.endswith('.csv'):
                 file_path = os.path.join('data/' + subject, filename)
                 # print(f'Processing {file_path}...')
@@ -156,7 +156,7 @@ def split_data(recordings):
     #    recordings = pickle.load(file)
     _df = pd.DataFrame(columns=['signal', 'class'])
     empty_recording_counter = 0
-    for subject in recordings[9:]:
+    for subject in recordings[8:]:
         for index, recording in enumerate(subject[3:]):
             if index == 0:
                 for i in range(0, 1800, 300):  # because recording 'd' lasts only 1 minute
@@ -164,7 +164,7 @@ def split_data(recordings):
                         'signal': [recording[i:i + 300]],
                         'class': index
                     })
-                    if len(recording[i:i+300]) != 0:
+                    if len(recording[i:i + 300]) != 0:
                         _df = pd.concat([_df, new_row], ignore_index=True)
                     else:
                         empty_recording_counter += 1
@@ -174,10 +174,9 @@ def split_data(recordings):
                         'signal': [recording[i:i + 300]],
                         'class': index
                     })
-                    if len(recording[i:i+300]) != 0:
+                    if len(recording[i:i + 300]) != 0:
                         _df = pd.concat([_df, new_row], ignore_index=True)
                     else:
                         empty_recording_counter += 1
     print(f'Empty Recordings: {empty_recording_counter}')
     return _df
-
