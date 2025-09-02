@@ -44,6 +44,10 @@ def find_rise_time(entry):
 def find_decay_time(entry):
     return 0
 
+def find_area_under_curve(entry):
+    recording = entry['signal']
+    return sum(abs(x) for x in recording)
+
 
 def split_cycles(recording):
     expected_distance = int(fs * 60 / heart_rate(recording, fs))
@@ -197,6 +201,7 @@ def extract(df):
     rise_time = df.apply(find_rise_time, axis=1)
     decay_time = df.apply(find_decay_time, axis=1)
     pulse_rate = df.apply(find_pulse_rate_variability, axis=1)
+    area_under_curve = df.apply(find_area_under_curve, axis=1)
 
     features_df = pd.DataFrame({
         'peak_amplitude': peak_amplitude,
@@ -204,7 +209,8 @@ def extract(df):
         'decay_time': decay_time,
         'pulse_rate': pulse_rate,
         'classification': df.classification,
-        'patient_id': df.patient_id
+        'patient_id': df.patient_id,
+        'area_under_curve': area_under_curve
     })
     for idx, row in df.iterrows():
         fiducial_features = aggregate_fiducial_features(row['signal'])

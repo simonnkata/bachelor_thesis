@@ -23,6 +23,7 @@ def pycaret_version():
     )
     df = df.replace({None: np.nan})
     features_df = extract(df)
+    del features_df['patient_id']
     print(f'Length: {len(features_df)}')
     s = setup(features_df, target='classification', session_id=123)
     best = compare_models()
