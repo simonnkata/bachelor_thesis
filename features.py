@@ -14,6 +14,8 @@ import time
 import matplotlib.pyplot as plt
 import uuid
 import seaborn as sns
+import torch
+import torch.nn as nn
 
 # Fudicial points: Onset, Systolic Peak, Max Slope, Dicrotic Notch, Diastolic Peak
 fs = 30
@@ -271,9 +273,10 @@ def extract(df):
         features_df.at[idx, 'time_delay'] = fiducial_features['time_delay']
         features_df.at[idx, 'diastolic_peak_time'] = fiducial_features['diastolic_peak_time']
 
-    features_df = apply_mask_and_balance(features_df, '3-class-b')
+    features_df = apply_mask_and_balance(features_df, '2-class')
     print(f'We are working with {len(features_df)} rows')
     return features_df
+
 
 '''
 df = validate()
@@ -321,3 +324,31 @@ for recording in df['signal']:
 print(f'Complete Features: {complete}')
 print(f'Incomplete Features: {incomplete}')
 '''
+
+
+def feature_embedding(df):
+
+    def embed(signal):
+        signal = torch.tensor(signal, dtype=torch.float32)
+        signal_length = len(signal)
+        patch_size = int(signal_length / 8)
+        embedding_dim = 64
+        num_heads = 4
+        num_layers = 2
+
+        tokens = signal.unfold(0, patch_size, patch_size)
+        tokens = tokens.unsqueeze(0)
+        linear_proj = nn.Linear(patch_size, embedding_dim)
+        x = linear_proj(tokens)
+        pos_encoding = nn.Parameter(torch.randn(1, x.size(1), embedding_dim))
+        x = x + pos_encoding
+        encoder_layer = nn.TransformerEncoderLayer(d_model=embedding_dim, nhead=num_heads)
+        transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        x = transformer_encoder(x)
+        embedding = x.mean(dim=1)
+        return embedding
+
+    embeddings = df['signal'].apply(lambda s: pd.Series(embed(s).numpy()))
+    embeddings.columns = [f'emb_{i}' for i in range(64)]
+    result = pd.concat([embeddings, df[['classification', 'patient_id']]], axis=1)
+    return result

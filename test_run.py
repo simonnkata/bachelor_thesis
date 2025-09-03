@@ -3,12 +3,14 @@ from pycaret.classification import *
 import numpy as np
 import pandas as pd
 from validation import validate
-from features import extract
-from sklearn.model_selection import train_test_split, LeaveOneGroupOut, cross_val_predict
+from features import extract, feature_embedding
+from sklearn.model_selection import train_test_split, LeaveOneGroupOut, cross_val_predict, GridSearchCV
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report
 from sklearn.impute import SimpleImputer
 import matplotlib.pyplot as plt
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 
 def pycaret_version():
@@ -81,4 +83,56 @@ def nn_approach():
     plt.show()
 
 
-leave_one_out_approach()
+def leave_one_out_approach_b():
+    signal_df = validate()
+    signal_df = signal_df.replace({None: np.nan})
+    df = feature_embedding(signal_df)
+    label_df = df['classification']
+    groups = df['patient_id']
+    features_df = df.drop(['classification', 'patient_id'], axis=1)
+
+    imputer = SimpleImputer(strategy="mean")
+    pipe = Pipeline([
+        ("imputer", imputer),
+        ("scaler", StandardScaler()),
+        ("clf", MLPClassifier(random_state=42, early_stopping=True, max_iter=1000))
+    ])
+    param_grid = {
+        "clf__hidden_layer_sizes": [(64, 32), (128, 64, 32)],
+        "clf__alpha": [1e-4, 1e-3],
+        "clf__solver": ["adam", "lbfgs"],
+        "clf__learning_rate_init": [1e-3, 1e-4]
+    }
+
+    X = features_df  # keep features_df unchanged
+    y = label_df
+    logo = LeaveOneGroupOut()
+
+    gs = GridSearchCV(
+        pipe,
+        param_grid,
+        cv=logo,
+        scoring="f1_macro",
+        n_jobs=-1,
+        refit=True
+    )
+
+    # IMPORTANT: pass groups to .fit
+    gs.fit(X, y, groups=groups)
+
+    print("best params:", gs.best_params_)
+    print("best cv score:", gs.best_score_)
+
+    # Get cross-validated predictions using the tuned hyperparams
+    best_pipe = gs.best_estimator_
+    y_pred = cross_val_predict(best_pipe, X, y, groups=groups, cv=logo, n_jobs=-1)
+
+    print("Accuracy:", accuracy_score(y, y_pred))
+    print(classification_report(y, y_pred))
+
+    cm = confusion_matrix(y, y_pred)
+    ConfusionMatrixDisplay(confusion_matrix=cm).plot()
+    plt.show()
+
+
+leave_one_out_approach_b()
