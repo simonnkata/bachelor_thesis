@@ -88,7 +88,8 @@ def validate():
         for recording_number in range(3, len(subject)):
             recording = subject[recording_number]
             length = 60 if recording_number == 3 else 120
-            step = fs * 10
+            snippet_length = 5 if recording_number == 3 else 10
+            step = fs * snippet_length
             for i in range(0, length * fs, step):
                 # print(recording)
                 window = recording[i:i + step]
@@ -96,13 +97,13 @@ def validate():
                     break
                 estimated_heart_rate = heart_rate(recording[i:i + step], fs)
                 rppg_structure[
-                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = estimated_heart_rate
+                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * snippet_length)}'] = estimated_heart_rate
                 signal_structure[
-                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = window
+                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * snippet_length)}'] = window
                 classification_structure[
-                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = classes[recording_number]
+                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * snippet_length)}'] = classes[recording_number]
                 patient_id_structure[
-                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * 10)}'] = subject_number
+                    f'{subject_number}_{number_mapping[recording_number]}_{i / (fs * snippet_length)}'] = subject_number
 
     # Calculate estimations for ppg
     fs = 128
@@ -117,14 +118,18 @@ def validate():
                     recording_type = match.group(1)
                 recording = np.loadtxt(file_path, usecols=1)
                 if recording_type in ['d', 'e', 'f', 'g']:
-                    length = 60 if recording_number == 1 else 120
-                    for i in range(0, length * fs, fs * 10):
-                        window = recording[i:i + (fs * 10)]
-                        if len(window) < (fs * 10):
+                    length = 60 if recording_type == 'd' else 120
+                    snippet_length = 5 if recording_type == 'd' else 10
+                    step = fs * snippet_length
+                    if recording_type == 1:
+                        print(f'We are repeating this {(length*fs) / step} times')
+                    for i in range(0, length * fs, step):
+                        window = recording[i:i + step]
+                        if len(window) < step:
                             break
                         estimated_heart_rate = heart_rate(window, fs)
                         ppg_structure[
-                            f'{subject_number + 8}_{recording_type}_{i / (fs * 10)}'] = estimated_heart_rate
+                            f'{subject_number + 8}_{recording_type}_{i / step}'] = estimated_heart_rate
     # with open('rppg_structure.pkl', 'wb') as file:
     #    pickle.dump(rppg_structure, file)
     # with open('ppg_structure.pkl', 'wb') as file:
@@ -134,7 +139,7 @@ def validate():
     errors = []
     for key in common_keys:
         error = abs(rppg_structure[key] - ppg_structure[key])
-        if classification_structure[key] == 'full' or error < 5:
+        if classification_structure[key] == 'full' or error < 25:
             result.loc[len(result)] = [signal_structure[key], classification_structure[key], patient_id_structure[key]]
     print(result['classification'].value_counts())
     print(f'Good recordings: {len(result)}')
@@ -170,4 +175,3 @@ def validate():
     plt.ylabel("Count")
     plt.show()
     '''
-validate()

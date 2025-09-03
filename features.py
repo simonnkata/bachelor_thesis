@@ -9,15 +9,38 @@ import pandas as pd
 import numpy as np
 from scipy.signal import find_peaks
 from validation import heart_rate, validate
+import statistics
 import time
 import matplotlib.pyplot as plt
 import uuid
+import seaborn as sns
 
 # Fudicial points: Onset, Systolic Peak, Max Slope, Dicrotic Notch, Diastolic Peak
 fs = 30
 classes = {0: 'baseline', 1: 'full', 2: 'moderate', 3: 'light'}
 features_list = ['pulse_interval', 'systolic_width', 'systolic_peak_time', 'diastolic_width',
                  'systolic_time', 'diastolic_time', 'time_delay', 'diastolic_peak_time']
+
+
+def apply_mask_and_balance(df, mask_type):
+    if mask_type == '2-class':
+        df['classification'] = df['classification'].replace({
+            'moderate': 'stenosis',
+            'light': 'stenosis',
+            'full': 'stenosis'
+        })
+    elif mask_type == '3-class':
+        df = df[df['classification'] != 'baseline']
+    elif mask_type == '3-class-b':
+        df['classification'] = df['classification'].replace({
+            'moderate': 'moderate',
+            'light': 'moderate',
+            'full': 'full'
+        })
+    grouped = df.groupby('classification')
+    min_size = grouped.size().min()
+    df = grouped.apply(lambda x: x.sample(n=min_size)).reset_index(drop=True)
+    return df
 
 
 def find_pulse_rate_variability(entry):
@@ -37,21 +60,40 @@ def find_peak_amplitude(entry):
     return np.std(peak_amplitudes)
 
 
-def find_rise_time(entry):
-    return 0
+def find_mean(entry):
+    recording = entry['signal']
+    return statistics.mean(recording)
 
 
-def find_decay_time(entry):
-    return 0
+def find_standard_deviation(entry):
+    recording = entry['signal']
+    return statistics.stdev(recording)
+
 
 def find_area_under_curve(entry):
     recording = entry['signal']
-    return sum(abs(x) for x in recording)
+    return sum(abs(x) for x in recording) / len(recording)
+
+
+def find_root_mean_square(entry):
+    recording = entry['signal']
+    return np.sqrt(np.mean(recording ** 2))
+
+
+def find_shape_factor(entry):
+    recording = entry['signal']
+    rms = find_root_mean_square(entry)
+    mean_abs = np.mean(np.abs(recording))
+    return rms / mean_abs
+
+
+def find_min_max_deviation(entry):
+    recording = entry['signal']
+    return abs(max(recording) - min(recording))
 
 
 def split_cycles(recording):
     expected_distance = int(fs * 60 / heart_rate(recording, fs))
-    print(f'Expected_distance: {expected_distance}')
     inverted = -recording
     min_indices, _ = find_peaks(inverted, distance=expected_distance - 3)
 
@@ -198,19 +240,25 @@ def extract(df):
     #    df = df.rename(columns={"class": "classification"})
 
     peak_amplitude = df.apply(find_peak_amplitude, axis=1)
-    rise_time = df.apply(find_rise_time, axis=1)
-    decay_time = df.apply(find_decay_time, axis=1)
+    mean = df.apply(find_mean, axis=1)
+    standard_deviation = df.apply(find_standard_deviation, axis=1)
     pulse_rate = df.apply(find_pulse_rate_variability, axis=1)
     area_under_curve = df.apply(find_area_under_curve, axis=1)
+    root_mean_square = df.apply(find_root_mean_square, axis=1)
+    shape_factor = df.apply(find_shape_factor, axis=1)
+    min_max_deviation = df.apply(find_min_max_deviation, axis=1)
 
     features_df = pd.DataFrame({
         'peak_amplitude': peak_amplitude,
-        'rise_time': rise_time,
-        'decay_time': decay_time,
+        'mean': mean,
+        'standard_deviation': standard_deviation,
+        'area_under_curve': area_under_curve,
         'pulse_rate': pulse_rate,
+        # 'root_mean_square': root_mean_square,
+        # 'shape_factor': shape_factor,
+        # 'min_max_deviation': min_max_deviation,
         'classification': df.classification,
         'patient_id': df.patient_id,
-        'area_under_curve': area_under_curve
     })
     for idx, row in df.iterrows():
         fiducial_features = aggregate_fiducial_features(row['signal'])
@@ -223,9 +271,9 @@ def extract(df):
         features_df.at[idx, 'time_delay'] = fiducial_features['time_delay']
         features_df.at[idx, 'diastolic_peak_time'] = fiducial_features['diastolic_peak_time']
 
+    features_df = apply_mask_and_balance(features_df, '3-class-b')
     print(f'We are working with {len(features_df)} rows')
     return features_df
-
 
 '''
 df = validate()

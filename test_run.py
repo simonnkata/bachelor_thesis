@@ -6,7 +6,7 @@ from validation import validate
 from features import extract
 from sklearn.model_selection import train_test_split, LeaveOneGroupOut, cross_val_predict
 from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report
 from sklearn.impute import SimpleImputer
 import matplotlib.pyplot as plt
 
@@ -34,7 +34,7 @@ def pycaret_version():
     plot_model(best, plot='confusion_matrix')
 
 
-def nn_approach():
+def leave_one_out_approach():
     signal_df = validate()
     signal_df = signal_df.replace({None: np.nan})
     df = extract(signal_df)
@@ -51,8 +51,21 @@ def nn_approach():
     clf = MLPClassifier(hidden_layer_sizes=(13,), activation="relu", solver="lbfgs", max_iter=300, random_state=42)
     y_pred = cross_val_predict(clf, X, y, groups=groups, cv=logo)
     print("Accuracy:", accuracy_score(y, y_pred))
+    print(classification_report(y, y_pred))
 
-    '''
+
+def nn_approach():
+    signal_df = validate()
+    signal_df = signal_df.replace({None: np.nan})
+    df = extract(signal_df)
+    label_df = df['classification']
+    features_df = df.drop(['classification', 'patient_id'], axis=1)
+
+    imputer = SimpleImputer(strategy="mean")
+    X = pd.DataFrame(imputer.fit_transform(features_df), columns=features_df.columns)
+    print(X.head())
+    y = label_df
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
     clf = MLPClassifier(hidden_layer_sizes=(13,), activation="relu", solver="lbfgs", max_iter=300, random_state=42)
@@ -66,6 +79,6 @@ def nn_approach():
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
     plt.show()
-    '''
 
-nn_approach()
+
+leave_one_out_approach()
