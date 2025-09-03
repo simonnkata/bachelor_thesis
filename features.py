@@ -346,9 +346,15 @@ def feature_embedding(df):
         transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         x = transformer_encoder(x)
         embedding = x.mean(dim=1)
-        return embedding
+        return embedding[0]
 
-    embeddings = df['signal'].apply(lambda s: pd.Series(embed(s).numpy()))
+    embeddings = df['signal'].apply(lambda s: pd.Series(embed(s).detach().numpy()))
     embeddings.columns = [f'emb_{i}' for i in range(64)]
     result = pd.concat([embeddings, df[['classification', 'patient_id']]], axis=1)
     return result
+
+df = validate()
+embedded = feature_embedding(df)
+
+print(embedded.head())
+print('hello_world')
