@@ -86,7 +86,7 @@ def nn_approach():
 def leave_one_out_approach_b():
     signal_df = validate()
     signal_df = signal_df.replace({None: np.nan})
-    df = feature_embedding(signal_df)
+    df = extract(signal_df)
     label_df = df['classification']
     groups = df['patient_id']
     features_df = df.drop(['classification', 'patient_id'], axis=1)
@@ -135,4 +135,4 @@ def leave_one_out_approach_b():
     plt.show()
 
 
-leave_one_out_approach_b()
+pycaret_version()
