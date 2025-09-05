@@ -465,7 +465,7 @@ def extract(df):
         features_df.at[idx, 't_u_v_ratio'] = fiducial_features_1['t_u_v_ratio']
         features_df.at[idx, 't_v_w_ratio'] = fiducial_features_1['t_v_w_ratio']
 
-    features_df = apply_mask_and_balance(features_df, '3-class-b')
+    # features_df = apply_mask_and_balance(features_df, '2-class')
     print(f'We are working with {len(features_df)} rows')
     return features_df
 

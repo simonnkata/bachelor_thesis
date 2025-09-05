@@ -95,13 +95,14 @@ def leave_one_out_approach_b():
     pipe = Pipeline([
         ("imputer", imputer),
         ("scaler", StandardScaler()),
-        ("clf", MLPClassifier(random_state=42, early_stopping=True, max_iter=1000))
+        ("clf", MLPClassifier(random_state=42, early_stopping=True, max_iter=10000))
     ])
     param_grid = {
-        "clf__hidden_layer_sizes": [(64, 32), (128, 64, 32)],
-        "clf__alpha": [1e-4, 1e-3],
+        "clf__hidden_layer_sizes": [(32,), (64, 32), (128, 64), (64, 32, 16), (128, 64, 32), (100, 50, 25)],
+        "clf__alpha": [1e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2],
+        "clf__activation": ['relu'],
         "clf__solver": ["adam", "lbfgs"],
-        "clf__learning_rate_init": [1e-3, 1e-4]
+        "clf__learning_rate_init": [1e-3, 1e-4, 5e-4, 2e-3, 5e-3]
     }
 
     X = features_df  # keep features_df unchanged
@@ -135,4 +136,4 @@ def leave_one_out_approach_b():
     plt.show()
 
 
-pycaret_version()
+leave_one_out_approach_b()
