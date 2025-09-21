@@ -7,6 +7,7 @@
 import pickle
 import pandas as pd
 import numpy as np
+from scipy.ndimage import label
 from scipy.signal import find_peaks, butter, filtfilt
 from validation import heart_rate, validate
 import statistics
@@ -16,6 +17,7 @@ import uuid
 import seaborn as sns
 import torch
 import torch.nn as nn
+import os
 
 # Fudicial points: Onset, Systolic Peak, Max Slope, Dicrotic Notch, Diastolic Peak
 fs = 30
@@ -24,7 +26,7 @@ features_list = ['pulse_interval', 'systolic_width', 'systolic_peak_time', 'dias
                  'systolic_time', 'diastolic_time', 'time_delay', 'diastolic_peak_time']
 
 
-def apply_mask_and_balance(df, mask_type):
+def apply_mask_and_balance(df, mask_type, balance=0):
     if mask_type == '2-class':
         df['classification'] = df['classification'].replace({
             'moderate': 'stenosis',
@@ -39,9 +41,10 @@ def apply_mask_and_balance(df, mask_type):
             'light': 'moderate',
             'full': 'full'
         })
-    grouped = df.groupby('classification')
-    min_size = grouped.size().min()
-    df = grouped.apply(lambda x: x.sample(n=min_size)).reset_index(drop=True)
+    if balance:
+        grouped = df.groupby('classification')
+        min_size = grouped.size().min()
+        df = grouped.apply(lambda x: x.sample(n=min_size)).reset_index(drop=True)
     return df
 
 
@@ -266,14 +269,23 @@ def fiducial_point_features(cycle, order):
         cycle_feature['pulse_interval'] = pulse_interval
         '''
         plt.clf()
-        plt.plot(cycle)
+        plt.plot(cycle, label='cycle', linewidth=1.5)
         if sp:
-            plt.scatter(sp_i, sp, color="red", zorder=5)
+            plt.scatter(sp_i, sp, color="red", zorder=5, label='Systolic Peak')
         if dn:
-            plt.scatter(dn_i, dn, color="blue", zorder=5)
+            plt.scatter(dn_i, dn, color="blue", zorder=5, label='Dicrotic Notch')
         if dp:
-            plt.scatter(dp_i, dp, color="green", zorder=5)
-        plt.show()
+            plt.scatter(dp_i, dp, color="green", zorder=5, label='Diastolic Peak')
+        plt.xlabel('Time (samples)')
+        plt.ylabel('Amplitude')
+        plt.title('rPPG Cycle with Fiducial Points')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        files = os.listdir('plots/marked_plots/zero')
+        numbers = [int(os.path.splitext(f)[0]) for f in files]
+        image_number = max(numbers, default=0) + 1
+        plt.savefig(f'plots/marked_plots/zero/{str(image_number)}.png')
         '''
         if sp:
             # systolic width
@@ -317,17 +329,25 @@ def fiducial_point_features(cycle, order):
         u = cycle[u_i] if u_i is not None else None
         v = cycle[v_i] if v_i is not None else None
         w = cycle[w_i] if w_i is not None else None
-        print('WE-CHECK-IF-WE-HAVE-THEM')
         '''
         plt.clf()
-        plt.plot(cycle)
+        plt.plot(cycle, label='cycle', linewidth=1.5)
         if u:
-            plt.scatter(u_i, u, color="red", zorder=5)
+            plt.scatter(u_i, u, color="red", zorder=5, label="U point")
         if v:
-            plt.scatter(v_i, v, color="blue", zorder=5)
+            plt.scatter(v_i, v, color="blue", zorder=5, label="V point")
         if w:
-            plt.scatter(w_i, w, color="green", zorder=5)
-        plt.show()
+            plt.scatter(w_i, w, color="green", zorder=5, label="W point")
+        plt.xlabel('Time (samples)')
+        plt.ylabel('Amplitude')
+        plt.title('First Derivative of rPPG Cycle with Fiducial Points')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        files = os.listdir('plots/marked_plots/first')
+        numbers = [int(os.path.splitext(f)[0]) for f in files]
+        image_number = max(numbers, default=0) + 1
+        plt.savefig(f'plots/marked_plots/first/{str(image_number)}.png')
         '''
         if u and v and w:
             cycle_feature['u_amplitude'] = u
@@ -465,7 +485,7 @@ def extract(df):
         features_df.at[idx, 't_u_v_ratio'] = fiducial_features_1['t_u_v_ratio']
         features_df.at[idx, 't_v_w_ratio'] = fiducial_features_1['t_v_w_ratio']
 
-    # features_df = apply_mask_and_balance(features_df, '2-class')
+    # features_df = apply_mask_and_balance(features_df, '3-class-b')
     print(f'We are working with {len(features_df)} rows')
     return features_df
 
@@ -477,7 +497,6 @@ extract(df)
 end = time.time()
 
 print(f"Features Extracted in {end - start} seconds")
-
 data = load_pos_filter_plot()
 df = split_data(data)
 df = df.rename(columns={"class": "classification"})

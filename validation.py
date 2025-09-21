@@ -139,7 +139,7 @@ def validate():
     errors = []
     for key in common_keys:
         error = abs(rppg_structure[key] - ppg_structure[key])
-        if classification_structure[key] == 'full' or error < 25:
+        if classification_structure[key] == 'full' or error < 10:
             result.loc[len(result)] = [signal_structure[key], classification_structure[key], patient_id_structure[key]]
     print(result['classification'].value_counts())
     print(f'Good recordings: {len(result)}')
@@ -160,7 +160,6 @@ def validate():
     plt.ylabel('Difference between estimates')
     plt.title('Bland-Altman Plot PPG vs RPPG')
     plt.show()
-
     for key in common_keys:
         error = rppg_structure[key] - ppg_structure[key]
         errors.append(abs(error))
