@@ -1,5 +1,6 @@
 from scipy.signal import cheby2, filtfilt
 
+# This file contains various filter types
 def low_pass_filter(signal, fs, cutoff, order, rs, rp):
     norm = cutoff / (0.5 * fs)
     b, a = cheby2(order, rs, norm, btype='low')
@@ -23,6 +24,8 @@ def band_stop_filter(signal, fs, low_cutoff, hight_cutoff, order, rs, rp):
     b, a = cheby2(order, rs, Wn, btype='bandstop')
     return filtfilt(b, a, signal)
 
+
+# Utility: Applies filter to recording
 def general_filter(df, fs, cutoff, order, rs, rp, high, low, filter_type):
     match filter_type:
         case 'low-pass':
