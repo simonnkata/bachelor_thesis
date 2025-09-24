@@ -37,8 +37,8 @@ def apply_mask_and_balance(df, mask_type, balance=0):
         df = df[df['classification'] != 'baseline']
     elif mask_type == '3-class-b':
         df['classification'] = df['classification'].replace({
-            'moderate': 'moderate',
-            'light': 'moderate',
+            'moderate': 'medium',
+            'light': 'medium',
             'full': 'full'
         })
     if balance:
@@ -482,10 +482,10 @@ def extract(df):
         features_df.at[idx, 'slope_v_w'] = fiducial_features_1['slope_v_w']
         features_df.at[idx, 'slope_u_w'] = fiducial_features_1['slope_u_w']
 
-        features_df.at[idx, 't_u_v_ratio'] = fiducial_features_1['t_u_v_ratio']
-        features_df.at[idx, 't_v_w_ratio'] = fiducial_features_1['t_v_w_ratio']
+        #features_df.at[idx, 't_u_v_ratio'] = fiducial_features_1['t_u_v_ratio']
+        #features_df.at[idx, 't_v_w_ratio'] = fiducial_features_1['t_v_w_ratio']
 
-    # features_df = apply_mask_and_balance(features_df, '3-class-b')
+    #features_df = apply_mask_and_balance(features_df, '2-class', 1)
     print(f'We are working with {len(features_df)} rows')
     return features_df
 
