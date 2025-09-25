@@ -16,8 +16,10 @@ Subject_nd = List[np.ndarray]
 Subjects_nd = List[Subject_nd]
 
 
-# Iterative: Loads all the recorded data into a 2d list of dataframes.
 def load_data() -> Subjects_df:
+    """
+        Iterative: Loads all the recorded data into a 2d list of dataframes.
+    """
     _data = []
     files = sorted([f for f in os.listdir('data') if f.isdigit()], key=int)
     print(files)
@@ -33,8 +35,10 @@ def load_data() -> Subjects_df:
     return _data
 
 
-# Utility: Plots and saves 3d recording
 def plot_and_save_3d(df: pd.DataFrame, subject: str, variant: str, directory: str) -> None:
+    """
+        Utility: Plots and saves 3d recording
+    """
     plt.clf()
     plt.plot(df['R'], color='red', label='R')
     plt.plot(df['G'], color='green', label='G')
@@ -48,8 +52,10 @@ def plot_and_save_3d(df: pd.DataFrame, subject: str, variant: str, directory: st
     plt.savefig(save_dir)
 
 
-# Utility: Plots and saves 1d recording
 def plot_and_save_1d(np_array: np.ndarray, subject: str, variant: str, directory: str) -> None:
+    """
+        Utility: Plots and saves 1d recording
+    """
     plt.clf()
     plt.plot(np_array)
     plt.title('Subject: ' + subject + ', Variant: ' + variant)
@@ -61,8 +67,10 @@ def plot_and_save_1d(np_array: np.ndarray, subject: str, variant: str, directory
     plt.savefig(save_dir)
 
 
-# Iterative: iterates through data object, plots and saves recordings in folders
 def plot_all(target_folder: str, _data: Subject_nd | Subjects_df, dimensions: int = 1):
+    """
+        Iterative: iterates through data object, plots and saves recordings in folders
+    """
     os.makedirs(target_folder, exist_ok=True)
     for subject_number, subject_data in enumerate(_data):
         print(f"Plotting Subject {subject_number + 1}")
@@ -76,8 +84,10 @@ def plot_all(target_folder: str, _data: Subject_nd | Subjects_df, dimensions: in
                 plot_and_save_1d(recording, str(subject_number + 1), mapping[index], directory)
 
 
-# Utility: Applies pos to 3d recordings in df object (R,G,B)
 def pos(_df: pd.DataFrame) -> np.ndarray:
+    """
+        Utility: Applies pos to 3d recordings in df object (R,G,B)
+    """
     rgb = _df[['R', 'G', 'B']].values
     mean_rgb = np.mean(rgb, axis=0)
     normalized = (rgb - mean_rgb) / mean_rgb
@@ -88,8 +98,10 @@ def pos(_df: pd.DataFrame) -> np.ndarray:
     return signal
 
 
-# Iterative: Iterates through df object, applies pos algorithm to each recording
 def apply_pos(_data: Subjects_df) -> Subjects_nd:
+    """
+       Iterative: Iterates through df object, applies pos algorithm to each recording
+    """
     all_recordings = []
     for subject in _data:
         subject_recordings = []
@@ -100,16 +112,20 @@ def apply_pos(_data: Subjects_df) -> Subjects_nd:
     return all_recordings
 
 
-# Iterative: Applies a selected filter type to each recording
 def filter_data(_data: Subjects_nd) -> None:
+    """
+        Iterative: Applies a selected filter type to each recording
+    """
     for subject in _data:
         for i in range(len(subject)):
             subject[i] = general_filter(subject[i], 30, 4, 5, 40, 0.5, 4, 0.5, 'band-pass')
     return
 
 
-# Iterative : Finds min and max points overall
 def get_min_max(recordings: Subjects_nd) -> List:
+    """
+        Iterative : Finds min and max points overall
+    """
     global_min, global_max = np.inf, -np.inf
     for subject in recordings:
         for recording in subject:
@@ -120,8 +136,10 @@ def get_min_max(recordings: Subjects_nd) -> List:
     return [global_min, global_max]
 
 
-# Iterative: Normalises Data throughout the object, on a scale covering the entire structure
 def normalise(recordings: Subjects_nd) -> None:
+    """
+        Iterative: Applies min-max normalisation to all recordings
+    """
     global_min, global_max = get_min_max(recordings)
     for subject_idx, subject in enumerate(recordings):
         for rec_idx, recording in enumerate(subject):

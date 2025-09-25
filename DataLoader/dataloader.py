@@ -2,6 +2,9 @@ from DataLoader.dataloader_helpers import load_data, apply_pos, filter_data, nor
 
 
 def load_process_data() -> Subjects_nd:
+    """
+    Loads rPPG recordings from csv files, applies POS algorithm, filters, and normalisation
+    """
     original_data = load_data()
     processed_data = apply_pos(original_data)
     filter_data(processed_data)

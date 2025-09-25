@@ -9,6 +9,11 @@ from FeatureExtraction.feature_extractor_helper import (find_peak_amplitude, fin
 
 
 def extract(df):
+    """
+        Takes a data frame with the signals, labels, and patient_id and extracts features.
+        Returns:
+             DataFrame with the labels, patient_id, peak_amplitude, area_under_curve, etc.
+    """
     peak_amplitude = df.apply(find_peak_amplitude, axis=1)
     mean = df.apply(find_mean, axis=1)
     standard_deviation = df.apply(find_standard_deviation, axis=1)

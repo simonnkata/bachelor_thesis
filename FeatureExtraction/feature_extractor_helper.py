@@ -10,8 +10,10 @@ features_list = ['pulse_interval', 'systolic_width', 'systolic_peak_time', 'dias
                  'systolic_time', 'diastolic_time', 'time_delay', 'diastolic_peak_time']
 
 
-# Helper: Adjusts labels to enable 4-class, 3-class, or 2-class classification. Optionally balances dataset
 def apply_mask_and_balance(df: pd.DataFrame, mask_type: str, balance: int = 0) -> pd.DataFrame:
+    """
+        Utility: Adjusts labels to enable 4-class, 3-class, or 2-class classification. Optionally balances dataset
+    """
     if mask_type == '2-class':
         df['classification'] = df['classification'].replace({
             'moderate': 'stenosis',
@@ -33,8 +35,10 @@ def apply_mask_and_balance(df: pd.DataFrame, mask_type: str, balance: int = 0) -
     return df
 
 
-# Helper: Finds the pulse rate variability for a signal from a DataFrame row
 def find_pulse_rate_variability(entry: pd.Series) -> float:
+    """
+        Utility: Finds the pulse rate variability for a signal from a DataFrame row
+    """
     recording = entry['signal']
     expected_distance = int(fs * 60 / heart_rate(recording, fs))
     peaks, _ = find_peaks(recording, distance=expected_distance)
@@ -43,8 +47,10 @@ def find_pulse_rate_variability(entry: pd.Series) -> float:
     return prv_std
 
 
-# Helper: Finds the peak amplitude value for a signal from a DataFrame row
 def find_peak_amplitude(entry: pd.Series) -> float:
+    """
+        Utility: Finds the peak amplitude value for a signal from a DataFrame row
+    """
     recording = entry['signal']
     expected_distance = int(fs * 60 / heart_rate(recording, fs))
     peaks, _ = find_peaks(recording, distance=expected_distance)
@@ -52,47 +58,61 @@ def find_peak_amplitude(entry: pd.Series) -> float:
     return np.std(peak_amplitudes)
 
 
-# Helper: Finds the mean value for a signal from a DataFrame row
 def find_mean(entry: pd.Series) -> float:
+    """
+        Utility: Finds the mean value for a signal from a DataFrame row
+    """
     recording = entry['signal']
     return statistics.mean(recording)
 
 
-# Helper: Finds the standard deviation for a signal from a DataFrame row
 def find_standard_deviation(entry: pd.Series) -> float:
+    """
+        Utility: Finds the standard deviation for a signal from a DataFrame row
+    """
     recording = entry['signal']
     return statistics.stdev(recording)
 
 
-# Helper: Finds the area under the curve per length for a signal from a DataFrame row
 def find_area_under_curve(entry: pd.Series) -> float:
+    """
+        Utility: Finds the area under the curve per length for a signal from a DataFrame row
+    """
     recording = entry['signal']
     return sum(abs(x) for x in recording) / len(recording)
 
 
-# Helper: Finds the root-mean-square for a signal from a DataFrame row
 def find_root_mean_square(entry: pd.Series) -> float:
+    """
+        Utility: Finds the root-mean-square for a signal from a DataFrame row
+    """
     recording = entry['signal']
     return np.sqrt(np.mean(recording ** 2))
 
 
-# Helper: Finds the shape factor for a signal from a DataFrame row
 def find_shape_factor(entry: pd.Series) -> float:
+    """
+        Utility: Finds the shape factor for a signal from a DataFrame row
+    """
     recording = entry['signal']
     rms = find_root_mean_square(entry)
     mean_abs = np.mean(np.abs(recording))
     return rms / mean_abs
 
 
-# Helper: Finds the min-max deviation for a signal from a DataFrame row
 def find_min_max_deviation(entry: pd.Series) -> float:
+    """
+        Utility: Finds the min-max deviation for a signal from a DataFrame row
+    """
     recording = entry['signal']
     return abs(max(recording) - min(recording))
 
 
-# Helper: Identifies cycles using the referenced recording, splits the cycled_recording into cycles based on the cycles of the reference recording
 # The point of having a reference_recording and a cycled_recording is to retain the same cycles when working with recordings of different derivatives
 def split_cycles(reference_recording: np.ndarray, cycled_recording: np.ndarray) -> list:
+    """
+        Utility & Iterative: Identifies cycles using the referenced recording, splits the cycled_recording into cycles based on the cycles of the reference recording
+    """
     hr = heart_rate(reference_recording, fs)
     if hr <= 0:
         raise ValueError("heart_rate returned <= 0")
@@ -151,8 +171,10 @@ def split_cycles(reference_recording: np.ndarray, cycled_recording: np.ndarray) 
     return result
 
 
-# Helper: Finds the fiducial points in a cycle, depending on the order
 def find_fiducial_points(cycle: np.ndarray, order: int) -> tuple[int, int, int]:
+    """
+        Utility: Finds the fiducial points in a cycle, depending on the order (0 derivative, 1st derivative, etc.)
+    """
     if order == 0:
         systolic_peak = None
         dicrotic_notch = None
@@ -198,8 +220,10 @@ def find_fiducial_points(cycle: np.ndarray, order: int) -> tuple[int, int, int]:
         print(3)
 
 
-# Helper: Estimates the fiducial point features for each cycle based on the fiducial points found
 def fiducial_point_features(cycle: np.ndarray, order: int) -> dict:
+    """
+        Utility: Estimates the fiducial point features for each cycle based on the fiducial points found
+    """
     cycle_feature = {}
     on = cycle[0]
     if order == 0:
@@ -272,8 +296,10 @@ def fiducial_point_features(cycle: np.ndarray, order: int) -> dict:
     return cycle_feature
 
 
-# Iterative: Calculates and averages the fiducial points for every cycle in a recording, cutting out extreme values
 def aggregate_fiducial_features(order: int, cycles: list[np.ndarray]) -> dict:
+    """
+    Iterative: Calculates and averages the fiducial points for every cycle in a recording, cutting out extreme values
+    """
     cycle_features = []
     for cycle in cycles:
         cycle_feature = fiducial_point_features(cycle, order)

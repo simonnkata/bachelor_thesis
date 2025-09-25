@@ -21,8 +21,10 @@ classes = {
 }
 
 
-# Utility: Estimates the heart rate from a recording
 def heart_rate(recording: np.ndarray, fs: int) -> float:
+    """
+        Utility: Estimates the heart rate from a recording.
+    """
     if len(recording) == 0:
         return 75
     recording = detrend(recording)
@@ -36,8 +38,10 @@ def heart_rate(recording: np.ndarray, fs: int) -> float:
     return float(heart_rate_bpm)
 
 
-# Iterative: Iterates through Subjects_nd element, estimates heart rates
 def estimate(_data: Subjects_nd) -> List[List[float]]:
+    """
+        Iterative: Iterates through Subjects_nd element, estimates heart rates
+    """
     fs = 30
     results = []
     for subject in _data:
@@ -49,8 +53,11 @@ def estimate(_data: Subjects_nd) -> List[List[float]]:
     return results
 
 
-# Utility & Iterative: Loads a ppg recording, splits the recording into snippets, returns dict of snippet_id and estimated heart rate
 def load_and_split_ppg(filename: str, subject: str, subject_number: int, adjust_baseline_size: bool, fs: int) -> Dict:
+    """
+        Utility & Iterative: Loads a ppg recording, splits the recording into snippets.
+        Returns: dict of snippet_id and estimated heart rate.
+    """
     iter_ppg_structure = {}
     recording_type = None
     if filename.endswith('.txt'):
@@ -76,8 +83,10 @@ def load_and_split_ppg(filename: str, subject: str, subject_number: int, adjust_
     return iter_ppg_structure
 
 
-# Iterative: Iterates through _processed directory, applies load_and_split_ppg to every recording.
 def load_ppg_struct(adjust_baseline_size: bool = False) -> Dict:
+    """
+        Iterative: Iterates through _processed directory, applies load_and_split_ppg to every recording.
+    """
     ppg_structure = {}
     _data = []
     fs = 128
@@ -89,8 +98,11 @@ def load_ppg_struct(adjust_baseline_size: bool = False) -> Dict:
     return ppg_structure
 
 
-# Utility & Iterative: Splits one rPPG recording into snippets, returns dict of snippet_id and estimated heart rate, classification, patient_id, and snippet
 def load_and_split_rppg(subject: List[np.ndarray], subject_number: int, recording_number: int, adjust_baseline_size: bool, fs: int) -> tuple[Dict, Dict, Dict, Dict]:
+    """
+        Utility & Iterative: Splits one rPPG recording into snippets.
+        Returns: dict of snippet_id and estimated heart rate, classification, patient_id, and snippet
+    """
     iter_rppg_structure = {}
     iter_signal_structure = {}
     iter_classification_structure = {}
@@ -118,8 +130,10 @@ def load_and_split_rppg(subject: List[np.ndarray], subject_number: int, recordin
     return iter_rppg_structure, iter_signal_structure, iter_classification_structure, iter_patient_id_structure
 
 
-# Iterative: Iterates through all rppg recordings, applies load_and_split_rppg to every recording.
 def load_rppg_structs(rppg_data: Subjects_nd, adjust_baseline_size: bool) -> tuple[Dict, Dict, Dict, Dict]:
+    """
+        Iterative: Iterates through all rppg recordings, applies load_and_split_rppg to every recording.
+    """
     rppg_structure = {}
     signal_structure = {}
     classification_structure = {}

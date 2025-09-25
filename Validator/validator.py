@@ -20,6 +20,12 @@ classes = {
 
 # Compares the estimated heart rates of the rppg and ppg signals. Returns validated rppg signals cut into 10 or 5 seconds snippets.
 def validate_and_split(rppg_data: Subjects_nd, adjust_baseline_size: bool = False, output_metrics: bool = False) -> pd.DataFrame:
+    """
+        Compares the estimated heart rates of the rPPG and PPG signals.
+
+        Returns:
+            pd.DataFrame: Validated rPPG signals cut into 10 or 5 second snippets.
+    """
     output = pd.DataFrame(columns=["signal", "classification", "patient_id"])
     ppg_structure = load_ppg_struct(adjust_baseline_size)
     rppg_structure, signal_structure, classification_structure, patient_id_structure = load_rppg_structs(rppg_data,
