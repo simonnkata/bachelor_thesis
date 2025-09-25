@@ -10,7 +10,7 @@ features_list = ['pulse_interval', 'systolic_width', 'systolic_peak_time', 'dias
                  'systolic_time', 'diastolic_time', 'time_delay', 'diastolic_peak_time']
 
 
-def apply_mask_and_balance(df: pd.DataFrame, mask_type: str, balance: int = 0) -> pd.DataFrame:
+def apply_mask_and_balance(df: pd.DataFrame, mask_type: str, balance: bool = False) -> pd.DataFrame:
     """
         Utility: Adjusts labels to enable 4-class, 3-class, or 2-class classification. Optionally balances dataset
     """

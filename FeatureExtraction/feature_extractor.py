@@ -8,7 +8,7 @@ from FeatureExtraction.feature_extractor_helper import (find_peak_amplitude, fin
                                                         split_cycles, aggregate_fiducial_features)
 
 
-def extract(df):
+def extract(df, mask_type: str = '4-class', balance: bool = False):
     """
         Takes a data frame with the signals, labels, and patient_id and extracts features.
         Returns:
@@ -68,6 +68,6 @@ def extract(df):
         features_df.at[idx, 'slope_v_w'] = fiducial_features_1['slope_v_w']
         features_df.at[idx, 'slope_u_w'] = fiducial_features_1['slope_u_w']
 
-    features_df = apply_mask_and_balance(features_df, '4-class', 0)
+    features_df = apply_mask_and_balance(features_df, mask_type, balance)
     print(f'We are working with {len(features_df)} rows')
     return features_df
