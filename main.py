@@ -5,7 +5,9 @@ from FeatureExtraction.feature_extractor import extract
 from Validator.validator import validate_and_split
 from Models.mlp_classifier import logo_training_evaluation, find_optimal_model_structure, feature_selection
 from sklearn.neural_network import MLPClassifier
+from Models.transformer import logo_cross_validation
 
+# THIS SECTION IS FOR MLP Classifier
 # Prepare the data. Here can be adjusted for 4-class, 3-class, 3-class-b, or 2-class.
 loaded_data = load_process_data()
 dataframe = validate_and_split(loaded_data, True)
@@ -48,4 +50,13 @@ print(selected_features)
 
 # Evaluate with best model structure, and best features
 logo_training_evaluation(features_df, classifier, selected_features)
+
+# THIS SECTION IS FOR TRANSFORMER
+loaded_data_2 = load_process_data()
+transformer_df = validate_and_split(loaded_data_2, False)
+transformer_df = transformer_df[transformer_df['classification'].isin(['baseline', 'full'])]
+transformer_df['classification'] = transformer_df['classification'].apply(
+    lambda x: 0 if x == 'baseline' else 1
+)
+logo_cross_validation(transformer_df)
 
