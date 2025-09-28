@@ -16,7 +16,7 @@ classes = {0: 'baseline', 1: 'full', 2: 'moderate', 3: 'light'}
 # Format: data[subject][a,b,c,d,e,f,g]
 def load_data() -> list:
     _data = []
-    files = sorted([f for f in os.listdir('data') if f.isdigit()], key=int)
+    files = sorted([f for f in os.listdir('../data') if f.isdigit()], key=int)
     print(files)
     for subject in files:
         index = len(_data)

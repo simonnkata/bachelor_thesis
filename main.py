@@ -16,7 +16,7 @@ features_df = extract(dataframe, '4-class', False)
 main_param_grid = {
     "clf__hidden_layer_sizes": [(32,), (64, 32), (128, 64), (64, 32, 16), (128, 64, 32), (100, 50, 25)],
     "clf__alpha": [1e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2],
-    "clf__activation": ['relu'],
+    "clf__activation": ['relu', 'tanh'],
     "clf__solver": ["adam", "lbfgs"],
     "clf__learning_rate_init": [1e-3, 1e-4, 5e-4, 2e-3, 5e-3]
 }
@@ -43,7 +43,7 @@ classifier = MLPClassifier(
 )
 
 # Select best features
-selected_features = list(feature_selection(features_df, clone(classifier)).k_feature_names_)
+selected_features = list(feature_selection(features_df, clone(classifier), selection_type='sequential').k_feature_names_)
 print(selected_features)
 
 # Evaluate with best model structure, and best features

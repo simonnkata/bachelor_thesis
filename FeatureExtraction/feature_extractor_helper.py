@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.signal import find_peaks
-from validation import heart_rate
+from Validator.validator_helpers import heart_rate
 import statistics
 
 fs = 30

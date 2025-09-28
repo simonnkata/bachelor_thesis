@@ -108,7 +108,7 @@ def validate():
     # Calculate estimations for ppg
     fs = 128
     ppg_structure = {}
-    files = sorted([f for f in os.listdir('_processed') if f.isdigit()], key=int)
+    files = sorted([f for f in os.listdir('../_processed') if f.isdigit()], key=int)
     for subject_number, subject in enumerate(files):
         for recording_number, filename in enumerate(os.listdir('_processed/' + subject)):
             if filename.endswith('.txt'):
